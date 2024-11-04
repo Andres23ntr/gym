@@ -1,0 +1,40 @@
+.inventory-overview {
+    text-align: center;
+    padding: 20px;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  .card {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 300px; /* Ancho fijo para las tarjetas */
+    margin: 10px;
+  }
+  
+  .card h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+  }
+  
+  .card p {
+    margin: 10px 0 0;
+    font-size: 32px;
+    color: #007bff; /* Cambia este color según tus necesidades */
+  }
+  
+  .card.low-stock p {
+    color: #ffa500; /* Color naranja para productos bajos en stock */
+  }
+  
+  .card.out-of-stock p {
+    color: #ff0000; /* Color rojo para productos agotados */
+  }
+  

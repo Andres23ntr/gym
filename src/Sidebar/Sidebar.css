@@ -1,0 +1,107 @@
+/* Sidebar.css */
+.App {
+    display: flex;
+  }
+  *{
+    margin: 0;
+    padding: 0;
+    box-sizing:border-box;
+  }
+.sidbar{
+    height:auto; /* Esto asegura que el sidebar ocupe toda la altura de la pantalla */
+
+}
+/* Contenedor principal del sidebar */
+.sidebar-container {
+    display: flex;
+    transition: all 0.5s ease;
+    height: 100vh; /* Asegúrate de que el sidebar use toda la altura de la ventana */
+
+  }
+  
+  /* Cuando el sidebar está colapsado */
+  .sidebar-container.collapsed .pro-sidebar {
+    width: 80px !important; /* Ancho del sidebar cuando está colapsado */
+  }
+  
+  /* Transición suave para el sidebar */
+  .pro-sidebar {
+    background-color: #2c3e50;
+    color: white;
+    transition: width 0.5s ease, background-color 0.5s ease;
+    margin-top: 50px; /* Espacio adicional para mover el nombre más abajo */
+
+  }
+  
+  /* Elementos del menú */
+  .pro-menu-item {
+    padding: 15px;
+    font-size: 16px;
+    transition: color 0.3s ease;
+  }
+  
+  /* Color del icono y texto del menú */
+  .pro-menu-item:hover {
+    background-color: #34495e;
+  }
+  
+  /* Botón para colapsar/expandir el sidebar */
+  .sidebar-toggle {
+    padding: 10px;
+    cursor: pointer;
+    color: white;
+    background-color: #000000;
+    transition: background-color 0.3s ease;
+  }
+  
+  .sidebar-toggle:hover {
+    background-color: #090909;
+  }
+  
+  /* Estilos adicionales para cuando el sidebar está expandido */
+  .sidebar-container .pro-sidebar.collapsed {
+    width: 200px; /* Ancho del sidebar expandido */
+  }
+  .user-initial {
+    width: 30px; /* Ajusta el tamaño según sea necesario */
+    height: 30px; /* Ajusta el tamaño según sea necesario */
+    border-radius: 50%; /* Para que sea circular */
+    background-color: #007bff; /* Color de fondo */
+    color: white; /* Color del texto */
+    display: flex;
+    align-items: center; /* Centrar verticalmente */
+    justify-content: center; /* Centrar horizontalmente */
+    font-weight: bold; /* Negrita */
+    font-size: 16px; /* Ajusta el tamaño de fuente */
+  }
+  .user-info {
+    display: flex;
+    margin-top: 50px; /* Espacio adicional para mover el nombre más abajo */
+
+    flex-direction: column; /* Coloca los elementos en columna */
+    align-items: center; /* Centra horizontalmente */
+    text-align: center; /* Centra el texto */
+    padding: 10px; /* Espaciado interno */
+  }
+  
+  .user-initial {
+    width: 40px; /* Ajusta el tamaño según sea necesario */
+    height: 40px; /* Ajusta el tamaño según sea necesario */
+    border-radius: 50%; /* Para que sea circular */
+    background-color: #007bff; /* Color de fondo */
+    color: white; /* Color del texto */
+    display: flex;
+    align-items: center; /* Centrar verticalmente */
+    justify-content: center; /* Centrar horizontalmente */
+    font-weight: bold; /* Negrita */
+    font-size: 20px; /* Ajusta el tamaño de fuente */
+    margin-bottom: 5px; /* Espacio entre la inicial y el nombre */
+  }
+  
+  .user-name {
+    font-size: 16px; /* Ajusta el tamaño de la fuente */
+    color: #333; /* Color del texto */
+    margin-top: 4px; /* Espacio adicional para mover el nombre más abajo */
+
+  }
+  

@@ -1,0 +1,124 @@
+/* Estilo general */
+.Login {
+  display: flex;
+  height: 100vh; /* Ocupa toda la altura de la ventana */
+  align-items: center;
+  justify-content: center;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #a11717de, #2f0505fe); /* Gradiente de fondo */
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Contenedor principal */
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Tarjeta de login */
+.login-card {
+  background-color: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  width: 400px;
+  animation: fadeIn 1s ease-in-out;
+}
+
+/* Título */
+.login-title {
+  text-align: center;
+  font-size: 28px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* Grupo de inputs */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+/* Estilo de los inputs */
+.login-input {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+/* Hover en los inputs */
+.login-input:focus {
+  border-color: #ec4242;
+  outline: none;
+  box-shadow: 0 0 8px rgba(110, 142, 251, 0.5);
+}
+
+/* Botón de login */
+.login-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #cc2a2a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Hover en el botón */
+.login-button:hover {
+  background-color: #272727;
+}
+
+/* Mensaje de error */
+.error-message {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+  animation: shake 0.3s ease-in-out;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}

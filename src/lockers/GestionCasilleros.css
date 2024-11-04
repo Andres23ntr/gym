@@ -1,0 +1,17 @@
+/* styles.css */
+.casillero-button {
+    background-color: #007bff; /* Color de fondo similar a Bootstrap */
+    color: white; /* Texto blanco */
+    border: 2px solid #0056b3; /* Borde más oscuro */
+    transition: background-color 0.3s, transform 0.2s; /* Transición suave */
+}
+
+.casillero-button:hover {
+    background-color: #0056b3; /* Color al pasar el mouse */
+    transform: scale(1.05); /* Efecto de aumento */
+}
+
+.casillero-button.disabled {
+    background-color: #dc3545; /* Color para botones deshabilitados */
+    border-color: #c82333; /* Borde para botones deshabilitados */
+}
