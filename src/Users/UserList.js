@@ -1,4 +1,3 @@
-// src/components/UserList.js
 import React, { useState, useEffect } from 'react';
 import { Button, Table, Form, Alert, Spinner } from 'react-bootstrap';
 import axios from 'axios';
@@ -13,39 +12,53 @@ const UserList = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/api/auth/index', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setUsers(response.data);
-    } catch (error) {
-      setError('Hubo un problema al obtener los usuarios.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let isMounted = true; // Bandera para evitar actualizaciones en componentes desmontados
+
     if (!token) {
       navigate('/');
       return;
     }
+
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/auth/index', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (isMounted) setUsers(response.data);
+      } catch (error) {
+        if (isMounted) {
+          if (error.response && error.response.status === 401) {
+            setError('Sesión expirada. Por favor, inicia sesión nuevamente.');
+            navigate('/');
+          } else {
+            setError('Hubo un problema al obtener los usuarios.');
+          }
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
     fetchUsers();
-  }, []);
+
+    return () => {
+      isMounted = false; // Limpieza del efecto
+    };
+  }, [navigate, token]);
 
   // Función para actualizar la lista cuando un usuario sea eliminado
   const handleUserDeleted = (userId) => {
-    setUsers(users.filter(user => user.id !== userId));
+    setUsers(users.filter((user) => user.id !== userId));
   };
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
   };
 
-  const filteredUsers = users.filter(user =>
+  const filteredUsers = users.filter((user) =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -91,7 +104,9 @@ const UserList = () => {
               <td>{user.email}</td>
               <td>
                 <Link to={`/editt/${user.id}`}>
-                  <Button variant="warning" className="me-2">Editar</Button>
+                  <Button variant="warning" className="me-2">
+                    Editar
+                  </Button>
                 </Link>
                 {/* Usar el componente DeleteUser para eliminar */}
                 <DeleteUser userId={user.id} onUserDeleted={handleUserDeleted} />

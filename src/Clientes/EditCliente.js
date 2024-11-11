@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Form, Button, Spinner, Alert, Container } from 'react-bootstrap';
+import { Form, Button, Spinner, Container } from 'react-bootstrap';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const EditClient = () => {
-  const { id } = useParams(); // Obtener ID del cliente de la URL
-  const navigate = useNavigate(); // Para redirección
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
-  // Estados para el formulario y los datos
   const [formData, setFormData] = useState({
     nombreCompleto: '',
     estadoMembresia: '',
@@ -24,61 +26,33 @@ const EditClient = () => {
   const [loading, setLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
-  const token = localStorage.getItem('token'); // Suponiendo que el token se guarda en localStorage
-
-  // Cargar datos del cliente, membresías y promociones al montar el componente
   useEffect(() => {
     const loadData = async () => {
       try {
+        const headers = { Authorization: `Bearer ${token}` };
         const [clienteRes, membresiaRes, contactoRes, allMembresias, allPromociones] = await Promise.all([
-          axios.get(`http://localhost:8000/api/clientes/${id}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-          axios.get(`http://localhost:8000/api/clientes-membresias/${id}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-          axios.get(`http://localhost:8000/api/contacto-clientes/${id}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-          axios.get('http://localhost:8000/api/membresias', {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
-          axios.get('http://localhost:8000/api/promociones', {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }),
+          axios.get(`http://localhost:8000/api/clientes/${id}`, { headers }),
+          axios.get(`http://localhost:8000/api/clientes-membresias/${id}`, { headers }),
+          axios.get(`http://localhost:8000/api/contacto-clientes/${id}`, { headers }),
+          axios.get('http://localhost:8000/api/membresias', { headers }),
+          axios.get('http://localhost:8000/api/promociones', { headers }),
         ]);
 
-        const cliente = clienteRes.data;
-        const membresia = membresiaRes.data;
-        const contacto = contactoRes.data;
-
         setFormData({
-          nombreCompleto: cliente.nombre_completo,
-          estadoMembresia: cliente.estado_membresia,
-          fechaInscripcion: membresia.fecha_inscripcion,
-          fechaVencimiento: membresia.fecha_vencimiento,
-          idPromocion: membresia.id_promocion || '',
-          idMembresia: membresia.id_membresia,
-          direccion: contacto.direccion,
-          telefono: contacto.telefono,
-          correoElectronico: contacto.correo_electronico,
+          nombreCompleto: clienteRes.data.nombre_completo,
+          estadoMembresia: clienteRes.data.estado_membresia,
+          fechaInscripcion: membresiaRes.data.fecha_inscripcion,
+          fechaVencimiento: membresiaRes.data.fecha_vencimiento,
+          idPromocion: membresiaRes.data.id_promocion || '',
+          idMembresia: membresiaRes.data.id_membresia,
+          direccion: contactoRes.data.direccion,
+          telefono: contactoRes.data.telefono,
+          correoElectronico: contactoRes.data.correo_electronico,
         });
-
         setMembresias(allMembresias.data);
         setPromociones(allPromociones.data);
       } catch (error) {
-        alert('Error al cargar los datos.');
-        console.error(error);
+        toast.error('Error al cargar los datos.');
       } finally {
         setIsLoadingData(false);
       }
@@ -87,61 +61,59 @@ const EditClient = () => {
     loadData();
   }, [id, token]);
 
-  // Manejar cambios en el formulario
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Actualizar entidades en la API
-  const handleUpdateEntities = async () => {
-    const { nombreCompleto, estadoMembresia, idMembresia } = formData;
+  const handleSelectChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value ? parseInt(value) : '', // Convierte a número o establece cadena vacía si no hay selección
+    }));
+  };
 
-    if (!nombreCompleto || !estadoMembresia || !idMembresia) {
-      alert('Nombre, Estado y Membresía son obligatorios.');
-      return;
+  const validateForm = () => {
+    const requiredFields = ['nombreCompleto', 'estadoMembresia', 'idMembresia'];
+    const emptyField = requiredFields.find((field) => !formData[field]);
+    if (emptyField) {
+      toast.warning(`El campo ${emptyField} es obligatorio.`);
+      return false;
     }
+    return true;
+  };
+
+  const handleUpdateEntities = async () => {
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
-      const clienteData = {
-        nombre_completo: nombreCompleto,
-        estado_membresia: estadoMembresia,
-      };
-      await axios.put(`http://localhost:8000/api/clientes/${id}`, clienteData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const headers = { Authorization: `Bearer ${token}` };
+      await Promise.all([
+        axios.put(`http://localhost:8000/api/clientes/${id}`, {
+          nombre_completo: formData.nombreCompleto,
+          estado_membresia: formData.estadoMembresia,
+        }, { headers }),
 
-      const membresiaData = {
-        id_membresia: idMembresia,
-        fecha_inscripcion: formData.fechaInscripcion,
-        fecha_vencimiento: formData.fechaVencimiento,
-        id_promocion: formData.idPromocion || null,
-      };
-      await axios.put(`http://localhost:8000/api/clientes-membresias/${id}/${idMembresia}`, membresiaData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        axios.put(`http://localhost:8000/api/clientes-membresias/${id}/${formData.idMembresia}`, {
+          id_membresia: formData.idMembresia,
+          fecha_inscripcion: formData.fechaInscripcion,
+          fecha_vencimiento: formData.fechaVencimiento,
+          id_promocion: formData.idPromocion || null,
+        }, { headers }),
 
-      const contactoData = {
-        direccion: formData.direccion,
-        telefono: formData.telefono,
-        correo_electronico: formData.correoElectronico,
-      };
-      await axios.put(`http://localhost:8000/api/contacto-clientes/${id}`, contactoData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        axios.put(`http://localhost:8000/api/contacto-clientes/${id}`, {
+          direccion: formData.direccion,
+          telefono: formData.telefono,
+          correo_electronico: formData.correoElectronico,
+        }, { headers }),
+      ]);
 
-      alert('Datos actualizados con éxito.');
+      toast.success('Datos actualizados con éxito.');
       navigate('/clientes');
     } catch (error) {
-      alert('Error al actualizar los datos.');
-      console.error(error);
+      toast.error('Error al actualizar los datos.');
     } finally {
       setLoading(false);
     }
@@ -158,26 +130,26 @@ const EditClient = () => {
 
   return (
     <Container>
+      <ToastContainer />
       <h1>Editar Cliente</h1>
       <Form>
-        <Form.Group controlId="nombreCompleto">
-          <Form.Label>Nombre Completo</Form.Label>
-          <Form.Control
-            type="text"
-            name="nombreCompleto"
-            value={formData.nombreCompleto}
-            onChange={handleInputChange}
-          />
-        </Form.Group>
+        {[
+          { label: 'Nombre Completo', type: 'text', name: 'nombreCompleto' },
+          { label: 'Dirección', type: 'text', name: 'direccion' },
+          { label: 'Teléfono', type: 'text', name: 'telefono' },
+          { label: 'Correo Electrónico', type: 'email', name: 'correoElectronico' },
+          { label: 'Fecha Inscripción', type: 'date', name: 'fechaInscripcion' },
+          { label: 'Fecha Vencimiento', type: 'date', name: 'fechaVencimiento' },
+        ].map(({ label, type, name }) => (
+          <Form.Group controlId={name} key={name}>
+            <Form.Label>{label}</Form.Label>
+            <Form.Control type={type} name={name} value={formData[name] || ''} onChange={handleInputChange} />
+          </Form.Group>
+        ))}
 
         <Form.Group controlId="estadoMembresia">
           <Form.Label>Estado Membresía</Form.Label>
-          <Form.Control
-            as="select"
-            name="estadoMembresia"
-            value={formData.estadoMembresia}
-            onChange={handleInputChange}
-          >
+          <Form.Control as="select" name="estadoMembresia" value={formData.estadoMembresia} onChange={handleInputChange}>
             <option value="Activo">Activo</option>
             <option value="Inactivo">Inactivo</option>
           </Form.Control>
@@ -185,12 +157,7 @@ const EditClient = () => {
 
         <Form.Group controlId="idMembresia">
           <Form.Label>Membresía</Form.Label>
-          <Form.Control
-            as="select"
-            name="idMembresia"
-            value={formData.idMembresia}
-            onChange={handleInputChange}
-          >
+          <Form.Control as="select" name="idMembresia" value={formData.idMembresia} onChange={handleSelectChange}>
             <option value="">Seleccione una Membresía</option>
             {membresias.map((m) => (
               <option key={m.id_membresia} value={m.id_membresia}>
@@ -201,71 +168,17 @@ const EditClient = () => {
         </Form.Group>
 
         <Form.Group controlId="idPromocion">
-          <Form.Label>Promoción</Form.Label>
-          <Form.Control
-            as="select"
-            name="idPromocion"
-            value={formData.idPromocion}
-            onChange={handleInputChange}
-          >
-            <option value="">Sin promoción</option>
-            {promociones.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.descripcion} - {p.descuento}%
-              </option>
-            ))}
-          </Form.Control>
-        </Form.Group>
+  <Form.Label>Promoción</Form.Label>
+  <Form.Control as="select" name="idPromocion" value={formData.idPromocion} onChange={handleSelectChange}>
+    <option value="">Sin promoción</option>
+    {promociones.map((p) => (
+      <option key={p.id} value={p.id}>
+        {p.id} {/* Muestra solo el ID de la promoción */}
+      </option>
+    ))}
+  </Form.Control>
+</Form.Group>
 
-        <Form.Group controlId="fechaInscripcion">
-          <Form.Label>Fecha Inscripción</Form.Label>
-          <Form.Control
-            type="date"
-            name="fechaInscripcion"
-            value={formData.fechaInscripcion}
-            onChange={handleInputChange}
-          />
-        </Form.Group>
-
-        <Form.Group controlId="fechaVencimiento">
-          <Form.Label>Fecha Vencimiento</Form.Label>
-          <Form.Control
-            type="date"
-            name="fechaVencimiento"
-            value={formData.fechaVencimiento}
-            onChange={handleInputChange}
-          />
-        </Form.Group>
-
-        <Form.Group controlId="direccion">
-          <Form.Label>Dirección</Form.Label>
-          <Form.Control
-            type="text"
-            name="direccion"
-            value={formData.direccion}
-            onChange={handleInputChange}
-          />
-        </Form.Group>
-
-        <Form.Group controlId="telefono">
-          <Form.Label>Teléfono</Form.Label>
-          <Form.Control
-            type="text"
-            name="telefono"
-            value={formData.telefono}
-            onChange={handleInputChange}
-          />
-        </Form.Group>
-
-        <Form.Group controlId="correoElectronico">
-          <Form.Label>Correo Electrónico</Form.Label>
-          <Form.Control
-            type="email"
-            name="correoElectronico"
-            value={formData.correoElectronico}
-            onChange={handleInputChange}
-          />
-        </Form.Group>
 
         <Button variant="primary" onClick={handleUpdateEntities} disabled={loading}>
           {loading ? 'Actualizando...' : 'Actualizar'}

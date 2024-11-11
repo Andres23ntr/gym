@@ -48,7 +48,7 @@ const Login = () => {
       toast.success('Inicio de sesión exitoso');
       console.log('Login exitoso. Token:', response.data.access_token);
 
-      setTimeout(() => navigate('/Clientes'), 1500); // Redirige después de 1.5 segundos
+      setTimeout(() => navigate('/Inicio'), 1500); // Redirige después de 1.5 segundos
     } catch (err) {
       toast.error('Credenciales incorrectas');
       console.error('Error de login', err);
@@ -67,21 +67,28 @@ const Login = () => {
             <div style={styles.inputGroup}>
               <label>Email:</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                style={styles.loginInput}
-              />
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value.slice(0, 25))}
+                  onKeyDown={(e) => {
+                    if (e.key === ' ') {
+                      e.preventDefault(); // Evita que se introduzca el espacio
+                    }
+                  }}
+                  required
+                  style={styles.loginInput}
+                  maxLength={25}
+                />
             </div>
             <div style={styles.inputGroup}>
               <label>Contraseña:</label>
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value.slice(0, 25))}
                 required
                 style={styles.loginInput}
+                maxLength={25}  // Límite de caracteres
               />
             </div>
             <button type="submit" style={styles.loginButton}>Login</button>
@@ -91,7 +98,7 @@ const Login = () => {
 
       <ToastContainer
         position="top-right"
-        autoClose={3000}
+        autoClose={2000}
         hideProgressBar={false}
         pauseOnFocusLoss
         draggable

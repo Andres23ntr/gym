@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Button, Modal, Alert } from 'react-bootstrap';
-import axios from 'axios';
-import { toast, ToastContainer } from 'react-toastify';
+import { Button, Modal } from 'react-bootstrap';
+import { toast } from 'react-toastify';
+import axios from 'axios'; // Importar axios
 import 'react-toastify/dist/ReactToastify.css';
 
 const DeleteUser = ({ userId, onUserDeleted }) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [error, setError] = useState(null);
   const token = localStorage.getItem('token');
 
   const handleDeleteConfirmation = () => {
@@ -15,19 +14,23 @@ const DeleteUser = ({ userId, onUserDeleted }) => {
 
   const handleDeleteUser = async () => {
     try {
-      await axios.delete(`http://localhost:8000/api/auth/destroyUser/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      onUserDeleted(userId); // Notifica al componente padre que el usuario fue eliminado
-      setShowConfirmation(false);
-      toast.success('Usuario eliminado correctamente');
+        await axios.delete(`http://localhost:8000/api/auth/destroyUser/${userId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        onUserDeleted(userId);
+        toast.success('Usuario eliminado correctamente.');
+        setShowConfirmation(false);
     } catch (error) {
-      setError('Hubo un problema al eliminar el usuario.');
-      toast.error('Error al eliminar el usuario.');
+        console.error('Error eliminando usuario:', error.response?.data || error.message);
+        const message =
+            error.response?.data?.message || 'Ocurrió un error inesperado al eliminar el usuario.';
+        toast.error(message);
     }
-  };
+};
+
 
   const handleCancelConfirmation = () => {
     setShowConfirmation(false);
@@ -53,11 +56,6 @@ const DeleteUser = ({ userId, onUserDeleted }) => {
           </Button>
         </Modal.Footer>
       </Modal>
-
-      {error && <Alert variant="danger" className="mt-3">{error}</Alert>}
-
-      {/* Contenedor de Toastify para mostrar notificaciones */}
-      <ToastContainer />
     </>
   );
 };

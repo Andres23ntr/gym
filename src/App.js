@@ -24,7 +24,17 @@ import AllPayForClient from './Clientes/AllPays';
 import UserList from './Users/UserList';
 import EditUserr from './Users/EditUser';
 import DeleteU from './Users/DeleteUser';
-
+import UserForm from './Users/UserForm';
+import Casilleros from './lockers/casilleros';
+import HistorialMembresiaForm from './Membresias/HistorialMembresia';
+import ClienteMembresia from './Clientes/EditMenbresia';
+import HistorialPagos from './Clientes/HistorialPagos';
+import Vencimientos from './Clientes/Vencimientos';
+import NotFound from './Redireccion/NotFound';
+import Dashboard from './Dashboard/Panel';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import './App.css';
 function App() {
   return (
     <Router>
@@ -34,8 +44,11 @@ function App() {
 
         {/* Área de contenido principal */}
         <div style={{ flex: 1, padding: '10px', overflowY: 'auto' }}> {/* Asegúrate de que el área de contenido pueda desplazarse */}
-         
-          <Routes>         
+        <ToastContainer />
+        
+          <Routes>     
+          <Route path="/Inicio" element={<Dashboard />} />
+    
           <Route path="/" element={<Login />} />
    
             <Route path="/Clientes" element={<ShowClientes />} />
@@ -53,11 +66,21 @@ function App() {
             <Route path="/Locker" element={<Locker/>} />
             <Route path="/allPay/:id" element={<AllPayForClient />} />  {/* Nueva ruta */}
             <Route path="/allPay" element={<AllPayForClient />} />  {/* Nueva ruta */}
+            <Route path="/Casilleros" element={<Casilleros />} />
 
             <Route path="/createPago" element={<CreatePago/>}/>
             <Route path="/userr" element={<UserList/>}/>
+            <Route path="/create-user" element={<UserForm/>}/>
+
             <Route path="/editt/:id" element={<EditUserr />} />
             <Route path="/delete/:id" element={<DeleteU />} />
+
+            <Route path="/menbresia/:id" element={<HistorialMembresiaForm />} />
+            <Route path="/ClientMenbresia/:id" element={<ClienteMembresia />} />
+            <Route path="/HistorialPag/:id" element={<HistorialPagos />} />
+            <Route path="/Vencimientos" element={<Vencimientos />} />
+
+            <Route path="*" element={<NotFound />} />
 
           </Routes>
         </div>

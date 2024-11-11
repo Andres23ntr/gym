@@ -4,17 +4,18 @@ import { FaBars, FaUser, FaCog, FaHome, FaSignOutAlt } from "react-icons/fa";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import "./Sidebar.css";
-import Profile from "../Login/Profile";
 import { TfiLayoutColumn3Alt } from "react-icons/tfi";
 import { BsCash } from "react-icons/bs";
 import { HiUserGroup } from "react-icons/hi";
+import { IoManSharp } from "react-icons/io5";
+import { IoNotifications } from "react-icons/io5";
 
 const MySidebar = () => {
   const [collapsed, setCollapsed] = useState(true);
   const [userInitial, setUserInitial] = useState("");
   const [userName, setUserName] = useState("");
   const navigate = useNavigate();
-  const location = useLocation(); // Obtiene la ruta actual
+  const location = useLocation();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -24,7 +25,7 @@ const MySidebar = () => {
         return;
       }
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/auth/me", {
+        const response = await axios.get("http://localhost:8000/api/auth/me", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -32,7 +33,7 @@ const MySidebar = () => {
 
         const userName = response.data.name;
         setUserInitial(userName.charAt(0).toUpperCase());
-        setUserName(userName); // Almacena el nombre completo
+        setUserName(userName);
       } catch (err) {
         console.error("Error al obtener los datos del usuario:", err);
       }
@@ -71,7 +72,6 @@ const MySidebar = () => {
     navigate(path);
   };
 
-  // Oculta el sidebar si la ruta actual es "/"
   if (location.pathname === "/") {
     return null;
   }
@@ -88,32 +88,64 @@ const MySidebar = () => {
           </MenuItem>
           <div style={{ height: "40px" }}></div>
 
-          <MenuItem icon={<FaHome />} onClick={() => handleNavigation("/")}>
+          <MenuItem
+            className="menu-item-hover"
+            icon={<FaHome />}
+            onClick={() => handleNavigation("/Inicio")}
+          >
             Home
           </MenuItem>
 
-          <MenuItem icon={<FaUser />} onClick={() => handleNavigation("/Clientes")}>
+          <MenuItem
+            className="menu-item-hover"
+            icon={<FaUser />}
+            onClick={() => handleNavigation("/Clientes")}
+          >
             Clientes
           </MenuItem>
-
-          <MenuItem icon={<HiUserGroup />} onClick={() => handleNavigation("/ShowUser")}>
+          <MenuItem
+            className="menu-item-hover"
+            icon={<IoManSharp />}
+            onClick={() => handleNavigation("/userr")}
+          >
+            Usuarios
+          </MenuItem>
+          <MenuItem
+            className="menu-item-hover"
+            icon={<HiUserGroup />}
+            onClick={() => handleNavigation("/ShowUser")}
+          >
             Empleados
           </MenuItem>
 
-          <MenuItem 
-            icon={<TfiLayoutColumn3Alt />} 
+          <MenuItem
+            className="menu-item-hover"
+            icon={<TfiLayoutColumn3Alt />}
             onClick={() => handleNavigation("/Locker")}
           >
             Casillero
           </MenuItem>
+          <MenuItem
+            className="menu-item-hover"
+            icon={<IoNotifications />}
+            onClick={() => handleNavigation("/Vencimientos")}
+          >
+            Notificaciones
+          </MenuItem>
 
-          <MenuItem 
-            icon={<BsCash />} 
+          <MenuItem
+            className="menu-item-hover"
+            icon={<BsCash />}
             onClick={() => handleNavigation("/ShowPagos")}
           >
             Pagos
           </MenuItem>
-          <MenuItem icon={<FaSignOutAlt />} onClick={handleLogout}>
+
+          <MenuItem
+            className="menu-item-hover"
+            icon={<FaSignOutAlt />}
+            onClick={handleLogout}
+          >
             Logout
           </MenuItem>
         </Menu>

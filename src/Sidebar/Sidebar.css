@@ -104,4 +104,13 @@
     margin-top: 4px; /* Espacio adicional para mover el nombre más abajo */
 
   }
-  
+  /* Asegura que los estilos se apliquen al hover del menú */
+  .sidebar-container .pro-sidebar .pro-menu-item {
+    transition: background-color 0.3s ease, color 0.3s ease; /* Transiciones suaves */
+  }
+
+/* Fondo rojo claro y letras blancas al pasar el mouse */
+.menu-item-hover:hover {
+  background-color: #0d0606 !important; /* Rojo claro */
+  color: rgb(196, 36, 36) !important; /* Texto blanco */
+}

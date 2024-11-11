@@ -1,28 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Button, Form, Alert } from 'react-bootstrap';
+import { Button, Form } from 'react-bootstrap';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import './Pago.css';
 
 const Pago = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { idCliente } = location.state; // Obtener el idCliente desde los parámetros de navegación
-  const [fechaPago, setFechaPago] = useState(''); // Inicializado como string
+  const { idCliente } = location.state;
+
+  const [fechaPago, setFechaPago] = useState('');
   const [monto, setMonto] = useState('');
-  const [metodoPago, setMetodoPago] = useState('Efectivo'); // Valor por defecto
-  const [estadoPago, setEstadoPago] = useState('Pagado'); // Valor por defecto
+  const [metodoPago, setMetodoPago] = useState('Efectivo');
+  const [detalle, setDetalle] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    // Establecer la fecha de pago como el día actual
     const today = new Date().toISOString().split('T')[0];
     setFechaPago(today);
   }, []);
 
+  const handleMontoChange = (e) => {
+    const value = e.target.value;
+
+    // Verifica que sea un número válido, hasta 6 dígitos, y mayor o igual a 50
+    if (/^\d*$/.test(value) && value.length <= 6) {
+      setMonto(value);
+      setErrors((prevErrors) => ({ ...prevErrors, monto: '' })); // Limpia errores
+    } else {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        monto: 'El monto debe ser un número válido de hasta 6 dígitos.',
+      }));
+    }
+  };
+
+  const validateFields = () => {
+    const newErrors = {};
+    if (!monto || parseInt(monto, 10) < 50) {
+      newErrors.monto = 'El monto debe ser mayor o igual a 50.';
+    }
+    if (!detalle) {
+      newErrors.detalle = 'Debe seleccionar un detalle.';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handlePago = async () => {
-    if (!monto || !metodoPago || !estadoPago || !fechaPago) {
-      setError('Todos los campos de pago son obligatorios.');
+    if (!validateFields()) {
+      toast.error('Por favor, complete correctamente todos los campos antes de enviar.');
       return;
     }
 
@@ -30,77 +60,87 @@ const Pago = () => {
     try {
       const pagoData = {
         id_cliente: idCliente,
-        fecha_pago: fechaPago, // La fecha se envía como string
+        fecha_pago: fechaPago,
         monto: parseFloat(monto),
         metodo_pago: metodoPago,
-        estado_pago: estadoPago,
+        detalle,
       };
 
       await axios.post('http://localhost:8000/api/pagos', pagoData);
-      alert('Pago creado con éxito');
-      navigate(-1); // Redirige a la pantalla anterior
+      toast.success('Pago creado con éxito', {
+        onClose: () => navigate('/Clientes', { state: { newClient: true } }),
+      });
     } catch (error) {
       console.error(error);
-      setError(error.response?.data?.message || 'Hubo un problema al crear el pago.');
+      toast.error(error.response?.data?.message || 'Hubo un problema al crear el pago.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container">
+    <div className="container pago-container">
       <h2>Crear Pago</h2>
-      {error && <Alert variant="danger">{error}</Alert>}
 
-      {/* Mostrar el idCliente en la pantalla */}
-      <p>ID Cliente: {idCliente}</p>
+      <div className="mb-3">
+        <label>Ci Cliente: {idCliente}</label>
+      </div>
 
       <div className="mb-3">
         <label>Fecha de Pago:</label>
-        <input
-          type="date"
-          className="form-control"
-          value={fechaPago}
-          onChange={(e) => setFechaPago(e.target.value)}
-          required
-          disabled // Desactivar el campo
-        />
+        <input type="date" className="form-control" value={fechaPago} disabled />
       </div>
 
       <div className="mb-3">
         <label>Monto:</label>
         <Form.Control
-          type="number"
+          type="text"
           value={monto}
-          onChange={(e) => setMonto(e.target.value)}
+          onChange={handleMontoChange}
+          className={`form-control ${errors.monto ? 'is-invalid' : ''}`}
           placeholder="Monto"
           required
         />
+        {errors.monto && <div className="invalid-feedback">{errors.monto}</div>}
       </div>
 
       <div className="mb-3">
         <label>Método de Pago:</label>
-        <Form.Control
-          type="text"
+        <Form.Select
           value={metodoPago}
           onChange={(e) => setMetodoPago(e.target.value)}
-          placeholder="Método de Pago"
-        />
+          required
+        >
+          <option value="Efectivo">Efectivo</option>
+          <option value="Tarjeta">Tarjeta</option>
+          <option value="QR">QR</option>
+        </Form.Select>
       </div>
 
       <div className="mb-3">
-        <label>Estado del Pago:</label>
-        <Form.Control
-          type="text"
-          value={estadoPago}
-          onChange={(e) => setEstadoPago(e.target.value)}
-          placeholder="Estado del Pago"
-        />
+        <label>Detalle</label>
+        <Form.Select
+          value={detalle}
+          onChange={(e) => setDetalle(e.target.value)}
+          className={`form-control ${errors.detalle ? 'is-invalid' : ''}`}
+          required
+        >
+          <option value="" disabled>
+            Seleccione un detalle
+          </option>
+          <option value="Alquiler Casillero">Alquiler Casillero</option>
+          <option value="Membresia">Membresía</option>
+          <option value="Renovacion Membresia">Renovación Membresía</option>
+          <option value="Renovacion Casillero">Renovación Casillero</option>
+        </Form.Select>
+        {errors.detalle && <div className="invalid-feedback">{errors.detalle}</div>}
       </div>
 
       <Button onClick={handlePago} disabled={loading}>
         {loading ? 'Creando...' : 'Crear Pago'}
       </Button>
+
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

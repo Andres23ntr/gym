@@ -1,302 +1,270 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './CreateEntities.css';
-import { useNavigate } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const CreateEntities = () => {
   const [formData, setFormData] = useState({
-    nombreCompleto: '',
-    estadoMembresia: '',
-    ci: '',
-    idMembresia: '',
-    fechaInscripcion: '',
-    fechaVencimiento: '',
-    idPromocion: '',
-    direccion: '',
-    telefono: '',
-    correoElectronico: '',
+    nombreCompleto: "",
+    estadoMembresia: "Activo", // Estado Membresía manejado internamente
+    ci: "",
+    idMembresia: "",
+    fechaInscripcion: "",
+    fechaVencimiento: "",
+    idPromocion: "",
+    direccion: "",
+    telefono: "",
+    correoElectronico: "",
   });
 
+  const [ciExists, setCiExists] = useState(false);
   const [promociones, setPromociones] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [idCliente, setIdCliente] = useState(null);
   const [membresias, setMembresias] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const token = localStorage.getItem("token");
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
+  const debounceTimer = useRef(null);
+
+  useEffect(() => {
+    if (!token) return navigate("/");
+    (async () => {
+      try {
+        const [membresiasRes, promocionesRes] = await Promise.all([
+          axios.get("http://localhost:8000/api/membresias"),
+          axios.get("http://localhost:8000/api/promociones"),
+        ]);
+        setMembresias(membresiasRes.data);
+        setPromociones(promocionesRes.data);
+        setFormData((prev) => ({
+          ...prev,
+          fechaInscripcion: new Date().toISOString().split("T")[0],
+        }));
+      } catch (error) {
+        toast.error("Error al cargar datos");
+      }
+    })();
+  }, [token, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    const validations = {
+      ci: () => !isNaN(value) && value.length <= 9,
+      nombreCompleto: () => /^[a-zA-Z\s]*$/.test(value),
+      direccion: () => /^[a-zA-Z\s]*$/.test(value),
+      telefono: () => !isNaN(value) && value.length <= 10,
+      correoElectronico: () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value), // Valida el formato del correo
 
-    // Validar campo CI para solo permitir números y longitud máxima de 9
-    if (name === 'ci' && (isNaN(value) || value.length > 9)) {
-      return;
-    }
+    };
 
-    if (name === 'nombreCompleto' && !/^[a-zA-Z\s]*$/.test(value)) {
-      return;
-    }
+    if (validations[name] && !validations[name]()) return;
 
     setFormData({ ...formData, [name]: value });
-  };
 
-  useEffect(() => {
-    if (!token) {
-      navigate('/');
+    if (name === "ci") {
+      clearTimeout(debounceTimer.current);
+      debounceTimer.current = setTimeout(() => checkCiExists(value), 700);
+    }
+    if (validations[name] && !validations[name]()) {
+      if (name === "correoElectronico") {
+        toast.warn("Por favor, ingrese un correo válido.");
+      }
       return;
     }
+  };
 
-    const fetchMembresias = async () => {
-      try {
-        const response = await axios.get('http://localhost:8000/api/membresias');
-        setMembresias(response.data);
-      } catch (error) {
-        console.error('Error al obtener las membresías', error);
-        toast.error('Error al obtener las membresías');
-      }
+  const handleMembresiaChange = (e) => {
+    const idMembresia = e.target.value;
+    const mesesPorMembresia = {
+      "1": 1,
+      "2": 12,
+      "3": 2,
+      "4": 3,
+      "5": 4,
+      "6": 5,
+      "7": 6,
+      "8": 7,
+      "9": 8,
+      "10": 9,
+      "11": 10,
+      "12": 11,
+      "13": 12,
     };
 
-    const fetchPromociones = async () => {
-      try {
-        const response = await axios.get('http://localhost:8000/api/promociones');
-        setPromociones(response.data);
-      } catch (error) {
-        console.error('Error al obtener las promociones', error);
-        toast.error('Error al obtener las promociones');
+    const meses = mesesPorMembresia[idMembresia] || 0;
+    const fechaVencimiento =
+      meses > 0
+        ? new Date(new Date().setMonth(new Date().getMonth() + meses))
+            .toISOString()
+            .split("T")[0]
+        : "";
+
+    setFormData({
+      ...formData,
+      idMembresia,
+      fechaVencimiento,
+    });
+  };
+
+  const checkCiExists = async (ci) => {
+    try {
+      const response = await axios.get(`http://localhost:8000/api/exists/${ci}`);
+      if (response.data) {
+        setCiExists(true);
+        setFormData((prev) => ({ ...prev, ci: "" }));
+        toast.warn("El CI ya está registrado, intente con otro.");
+      } else {
+        setCiExists(false);
       }
-    };
-
-    fetchMembresias();
-    fetchPromociones();
-
-    // Set default fechaInscripcion to today
-    const today = new Date().toISOString().split('T')[0];
-    setFormData((prevFormData) => ({
-      ...prevFormData,
-      fechaInscripcion: today,
-    }));
-  }, []);
-
-  // Función para formatear fecha en formato DD/MM/YYYY
-  const formatDate = (date) => {
-    const d = new Date(date);
-    let day = d.getDate();
-    let month = d.getMonth() + 1; // Meses van de 0 a 11
-    const year = d.getFullYear();
-
-    if (day < 10) {
-      day = `0${day}`;
+    } catch (error) {
     }
-    if (month < 10) {
-      month = `0${month}`;
-    }
-
-    return `${day}/${month}/${year}`;
   };
 
   const handleCreateEntities = async () => {
     const { ci, nombreCompleto, idMembresia } = formData;
-
-    if (!ci || !nombreCompleto || idMembresia === '') {
-      toast.warn('CI, Nombre Completo y ID Membresía son obligatorios.');
-      return;
+    if (!ci || !nombreCompleto || !idMembresia) {
+      return toast.warn("Campos obligatorios incompletos.");
     }
 
     setLoading(true);
     try {
-      const clienteData = {
-        id_cliente: ci,
-        nombre_completo: nombreCompleto,
-        estado_membresia: formData.estadoMembresia,
-      };
-
-      const clienteResponse = await axios.post('http://localhost:8000/api/clientes', clienteData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      await axios.post(
+        "http://localhost:8000/api/clientes",
+        {
+          id_cliente: ci,
+          nombre_completo: nombreCompleto,
+          estado_membresia: formData.estadoMembresia, // Estado Membresía manejado internamente
         },
-      });
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-      const clienteCreado = clienteResponse.data;
-      setIdCliente(clienteCreado.id);
+      await Promise.all([
+        axios.post("http://localhost:8000/api/clientes-membresias", {
+          id_cliente: ci,
+          id_membresia: idMembresia,
+          fecha_inscripcion: formData.fechaInscripcion,
+          fecha_vencimiento: formData.fechaVencimiento,
+          id_promocion: formData.idPromocion,
+        }),
+        axios.post("http://localhost:8000/api/contacto-clientes", {
+          id_cliente: ci,
+          direccion: formData.direccion,
+          telefono: formData.telefono,
+          correo_electronico: formData.correoElectronico,
+        }),
+      ]);
 
-      const membresiaData = {
-        id_cliente: clienteData.id_cliente,
-        id_membresia: idMembresia,
-        fecha_inscripcion: formData.fechaInscripcion || null,
-        fecha_vencimiento: formData.fechaVencimiento || null,
-        id_promocion: formData.idPromocion || null,
-      };
-
-      await axios.post('http://localhost:8000/api/clientes-membresias', membresiaData);
-
-      const contactoData = {
-        id_cliente: clienteData.id_cliente,
-        direccion: formData.direccion || null,
-        telefono: formData.telefono || null,
-        correo_electronico: formData.correoElectronico || null,
-      };
-      await axios.post('http://localhost:8000/api/contacto-clientes', contactoData);
-
-      toast.success('Cliente, Membresía y Contacto creados con éxito');
-      navigate('/pago', { state: { idCliente: clienteData.id_cliente } });
+      toast.success("Cliente creado con éxito");
+      navigate("/pago", { state: { idCliente: ci } });
     } catch (error) {
-      console.error(error);
-      const errorMessage = error.response?.data?.message || 'Hubo un problema al crear las entidades.';
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || "Error al crear entidades");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMembresiaChange = (e) => {
-    const selectedMembresia = e.target.value;
-    const today = new Date();
-    let nuevaFechaVencimiento = new Date(today);
-
-    // Ajustar la fecha de vencimiento según el tipo de membresía
-    if (selectedMembresia === 'mensual') {
-      nuevaFechaVencimiento.setMonth(nuevaFechaVencimiento.getMonth() +2);
-    } else if (selectedMembresia === 'anual') {
-      nuevaFechaVencimiento.setFullYear(nuevaFechaVencimiento.getFullYear() + 1);
-    }
-
-    const fechaFormateada = formatDate(nuevaFechaVencimiento); // Formatear fecha a DD/MM/YYYY
-
-    setFormData({
-      ...formData,
-      idMembresia: selectedMembresia,
-      fechaVencimiento: fechaFormateada, // Asignar la fecha formateada
-    });
-  };
-
   return (
-    <div className="form-container">
-      <h2>Crear Cliente</h2>
-      <input
-        type="text"
-        className="form-input"
-        name="ci"
-        value={formData.ci}
-        onChange={handleInputChange}
-        placeholder="CI"
-        maxLength="9"
-      />
-      <input
-        type="text"
-        className="form-input"
-        name="nombreCompleto"
-        value={formData.nombreCompleto}
-        onChange={handleInputChange}
-        placeholder="Nombre Completo"
-      />
+    <div className="container mt-5">
+      <ToastContainer />
+      <h2 className="text-center mb-4">Crear Cliente</h2>
 
-      <label className="form-label">Estado Membresía:</label>
-      <select
-        name="estadoMembresia"
-        className="form-control"
-        value={formData.estadoMembresia}
-        onChange={(e) => setFormData({ ...formData, estadoMembresia: e.target.value })}
-      >
-        <option value="">Seleccione el estado</option>
-        <option value="Activo">Activo</option>
-        <option value="Inactivo">Inactivo</option>
-      </select>
+      {/* Campo de CI */}
+      <div className="mb-3">
+        <label className="form-label">CI</label>
+        <input
+          type="text"
+          className={`form-control ${ciExists ? "is-invalid" : ""}`}
+          name="ci"
+          value={formData.ci}
+          onChange={handleInputChange}
+          maxLength="8"
+          minLength="7"
+          required
+        />
+        {ciExists && <div className="invalid-feedback">El CI ya está registrado.</div>}
+      </div>
 
-      {idCliente && <div className="form-success">ID Cliente Creado: {idCliente}</div>}
+      {/* Campos generales */}
+      {[
+        { label: "Nombre Completo", name: "nombreCompleto", type: "text" },
+        { label: "Teléfono", name: "telefono", type: "tel", maxLength: "10" },
+        { label: "Correo Electrónico", name: "correoElectronico", type: "email" },
+        { label: "Dirección", name: "direccion", type: "text" },
+      ].map(({ label, name, type, maxLength }) => (
+        <div className="mb-3" key={name}>
+          <label className="form-label">{label}</label>
+          <input
+            type={type}
+            className="form-control"
+            name={name}
+            value={formData[name]}
+            onChange={handleInputChange}
+            maxLength={maxLength}
+            required
+          />
+        </div>
+      ))}
+        <div className="mb-3"> 
+    <label className="form-label">Promoción</label>
+    <select 
+      className="form-select" 
+      name="idPromocion" 
+      value={formData.idPromocion} 
+      onChange={(e) => setFormData({ ...formData, idPromocion: e.target.value })}
+    >
+      <option value="">Seleccione una Promoción (opcional)</option>
+      {promociones.map(({ id_promocion, descripcion, descuento }) => (
+        <option key={id_promocion} value={id_promocion}>
+          {`${id_promocion} - ${descripcion} - ${descuento}%`}
+        </option>
+      ))}
+    </select>
+  </div>
 
-      <h2>Membresía</h2>
-      <label className="form-label">Membresía:</label>
-      <select
-        className="form-input"
-        name="idMembresia"
-        value={formData.idMembresia}
-        onChange={(e) => {
-          const selectedMembresia = e.target.value;
-          setFormData({ ...formData, idMembresia: selectedMembresia });
-          handleMembresiaChange(e); // Llamamos a la función para ajustar la fecha de vencimiento
-        }}
-      >
-        <option value="">Seleccione una Membresía</option>
-        {membresias.map(({ id_membresia, tipo_membresia, descripcion }) => (
-          <option key={id_membresia} value={id_membresia}>
-            {tipo_membresia} - {descripcion}
-          </option>
-        ))}
-      </select>
+      {/* Campo de Membresías */}
+      <div className="mb-3">
+        <label className="form-label">Membresía</label>
+        <select
+          className="form-select"
+          name="idMembresia"
+          value={formData.idMembresia}
+          onChange={handleMembresiaChange}
+          required
+        >
+          <option value="">Seleccione una Membresía</option>
+          {membresias.map(({ id_membresia, tipo_membresia, descripcion }) => (
+            <option key={id_membresia} value={id_membresia}>
+              {`${tipo_membresia} - ${descripcion}`}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <label className="form-label">Fecha Inscripción:</label>
-      <input
-        type="date"
-        name="inscripcion"
-        className="form-control"
-        value={formData.fechaInscripcion}
-        onChange={(e) => setFormData({ ...formData, fechaInscripcion: e.target.value })}
-        min={new Date().toISOString().split('T')[0]}
-        max={new Date().toISOString().split('T')[0]}
-      />
-
-      <label className="form-label">Fecha Vencimiento:</label>
-      <input
-        type="text"
-        name="vencimiento"
-        className="form-control"
-        value={formData.fechaVencimiento || ''}
-        readOnly
-      />
-
-      <h2>Promoción</h2>
-      <select
-        className="form-input"
-        name="idPromocion"
-        value={formData.idPromocion}
-        onChange={(e) => setFormData({ ...formData, idPromocion: parseInt(e.target.value, 10) || null })}
-      >
-        <option value="">Seleccione una promoción</option>
-        {promociones.map(({ id, descripcion, descuento, fecha_fin }) => (
-          <option key={id} value={id}>
-            {descripcion} - {descuento}% (Válido hasta: {fecha_fin})
-          </option>
-        ))}
-      </select>
-
-      <h2>Contacto Cliente</h2>
-      <input
-        type="text"
-        className="form-input"
-        name="direccion"
-        value={formData.direccion}
-        onChange={handleInputChange}
-        placeholder="Dirección"
-      />
-      <input
-        type="tel"
-        className="form-input"
-        name="telefono"
-        value={formData.telefono}
-        onChange={handleInputChange}
-        placeholder="Teléfono"
-        maxLength="10"
-      />
-      <input
-        type="email"
-        className="form-input"
-        name="correoElectronico"
-        value={formData.correoElectronico}
-        onChange={handleInputChange}
-        placeholder="Correo Electrónico"
-      />
+      {/* Fechas */}
+      {[
+        { label: "Fecha Inscripción", name: "fechaInscripcion" },
+        { label: "Fecha Vencimiento", name: "fechaVencimiento" },
+      ].map(({ label, name }) => (
+        <div className="mb-3" key={name}>
+          <label className="form-label">{label}</label>
+          <input
+            type="date"
+            className="form-control"
+            name={name}
+            value={formData[name]}
+            readOnly
+          />
+        </div>
+      ))}
 
       <button
-        className="btn btn-primary w-100"
-        type="submit"
+        className="btn btn-primary"
         onClick={handleCreateEntities}
         disabled={loading}
       >
-        {loading ? 'Creando...' : 'Crear'}
+        {loading ? "Creando..." : "Crear Cliente"}
       </button>
-
-      <ToastContainer />
     </div>
   );
 };
